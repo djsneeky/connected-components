@@ -1,4 +1,16 @@
+#include <math.h>
 
+#include "allocate.h"
+#include "randlib.h"
+#include "tiff.h"
+#include "typeutil.h"
+
+void print_usage(const char *program_name);
+void ConnectedNeighbors(struct pixel s, double T, unsigned char **img,
+                        int width, int height, int *M, struct pixel c[4]);
+void ConnectedSet(struct pixel s, double T, unsigned char **img, int width,
+                  int height, int ClassLabel, unsigned int **seg,
+                  int *NumConPixels);
 
 struct pixel {
   int row, col;
@@ -82,4 +94,45 @@ void ConnectedSet(struct pixel s, double T, unsigned char **img, int width,
       }
     }
   } while (B_idx > 0);
+}
+
+int main(int argc, char **argv) {
+  FILE *fp;
+  struct TIFF_img input_img;
+  double **img1;
+  int32_t i, j, pixel;
+
+  if (argc != 1) {
+    print_usage(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  // open image file
+  if ((fp = fopen(argv[1], "rb")) == NULL) {
+    fprintf(stderr, "Error: failed to open file %s\n", argv[1]);
+    return EXIT_FAILURE;
+  }
+
+  // read image
+  if (read_TIFF(fp, &input_img)) {
+    fprintf(stderr, "Error: failed to read file %s\n", argv[1]);
+    return EXIT_FAILURE;
+  }
+
+  // close image file
+  fclose(fp);
+
+  // check image data type
+  if (input_img.TIFF_type != 'm') {
+    fprintf(stderr, "Error: image must be 8-bit grayscale\n");
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
+
+void print_usage(const char *program_name) {
+  printf("Usage: %s <image-file-path>\n", program_name);
+  printf("Arguments:\n");
+  printf("  <image-file-path> : Specify the file path of the image.\n");
 }
