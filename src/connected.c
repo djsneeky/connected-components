@@ -87,23 +87,30 @@ void ConnectedSet(pixel_t s, double T, unsigned char **img, int width,
     pixel_t neighbors[4];
     int num_neighbors = 0;
     ConnectedNeighbors(s, T, img, width, height, &num_neighbors, neighbors);
+    // printf("num_neighbors: %d\t", num_neighbors);
     // add neighbors to the queue if not already a part of seg
     for (int i = 0; i < num_neighbors; i++) {
+      // printf("neighbor: %d, %d\t", neighbors[i].col, neighbors[i].row);
       if (seg[neighbors[i].row][neighbors[i].col] != ClassLabel) {
+        // printf("adding neighbor: %d, %d\t", neighbors[i].col,
+        // neighbors[i].row);
         B[++B_idx] = neighbors[i];
       }
     }
+    // printf("\n");
   } while (B_idx > 0);
 }
 
 int main(int argc, char **argv) {
   FILE *fp;
-  struct TIFF_img input_img, seg_img;
+  struct TIFF_img input_img;
 
-  if (argc != 2) {
+  if (argc != 3) {
     print_usage(argv[0]);
     return EXIT_FAILURE;
   }
+
+  double threshold = atof(argv[2]);
 
   // open image file
   if ((fp = fopen(argv[1], "rb")) == NULL) {
@@ -127,22 +134,32 @@ int main(int argc, char **argv) {
   }
 
   // create output seg image
+  struct TIFF_img seg_img;
   get_TIFF(&seg_img, input_img.height, input_img.width, 'g');
 
   pixel_t s = {.col = 67, .row = 45};
   int connected_pixels = 0;
-  ConnectedSet(s, 2, input_img.mono, input_img.width, input_img.height, 1,
+  ConnectedSet(s, 2, input_img.mono, input_img.width, input_img.height, 255,
                seg_img.mono, &connected_pixels);
 
   // open seg image file
-  if ((fp = fopen("../img/seg.tif", "wb")) == NULL) {
-    fprintf(stderr, "cannot open file seg.tif\n");
+  // Convert double to string
+  char num_str[20];
+  snprintf(num_str, sizeof(num_str), "%.2f", threshold);  // Example format %.2f
+
+  // Construct file name with the double value
+  char output_file[50];
+  strcpy(output_file, "../img/seg_");
+  strcat(output_file, num_str);
+  strcat(output_file, ".tif");
+  if ((fp = fopen(output_file, "wb")) == NULL) {
+    fprintf(stderr, "Error: failed to open output file\n");
     return EXIT_FAILURE;
   }
 
   // write seg image
   if (write_TIFF(fp, &seg_img)) {
-    fprintf(stderr, "error writing TIFF file %s\n", argv[2]);
+    fprintf(stderr, "Error: failed to write TIFF file %s\n", argv[2]);
     return EXIT_FAILURE;
   }
 
@@ -156,4 +173,7 @@ void print_usage(const char *program_name) {
   printf("Usage: %s <image-file-path>\n", program_name);
   printf("Arguments:\n");
   printf("  <image-file-path> : Specify the file path of the image.\n");
+  printf(
+      "  <threshold> : Specify the threshold number for determining pixel "
+      "neighbors.\n");
 }
