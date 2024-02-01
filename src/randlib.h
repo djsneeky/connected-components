@@ -1,11 +1,11 @@
 #ifndef _RANDLIB_H_
 #define _RANDLIB_H_
 
-
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 #include "typeutil.h"
 
 double random2();
@@ -17,4 +17,3 @@ double normal();
 double dexprand();
 
 #endif /* _RANDLIB_H_ */
-

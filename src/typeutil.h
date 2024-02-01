@@ -1,11 +1,11 @@
 /*************************************************************
-*  
-*  FILE:     typeutil.h
-*  AUTHOR:   Ben Brame
-*  DATE:     Jan. 24, 2009
-*  PURPOSE:  Define architecture independent integer types
-* 
-*************************************************************/
+ *
+ *  FILE:     typeutil.h
+ *  AUTHOR:   Ben Brame
+ *  DATE:     Jan. 24, 2009
+ *  PURPOSE:  Define architecture independent integer types
+ *
+ *************************************************************/
 
 #ifndef _TYPEUTIL_H_
 #define _TYPEUTIL_H_
@@ -38,4 +38,3 @@ typedef unsigned long long uint64_t;
 #endif
 
 #endif /* _TYPEUTIL_H_ */
-

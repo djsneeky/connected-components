@@ -11,5 +11,3 @@ void *multialloc(size_t s, int d, ...);
 void multifree(void *r, int d);
 
 #endif /* _ALLOCATE_H_ */
-
-
