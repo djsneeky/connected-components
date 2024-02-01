@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -pedantic
 BIN = ../bin
 
-all: ImageReadWriteExample SurrogateFunctionExample SolveExample
+all: ImageReadWriteExample SurrogateFunctionExample SolveExample ConnectedPixels
 
 clean:
 	/bin/rm *.o $(BIN)/*
@@ -22,3 +22,6 @@ SolveExample: SolveExample.o $(OBJ)
 	$(CC) $(CFLAGS) -o SolveExample SolveExample.o $(OBJ) -lm
 	mv SolveExample $(BIN)
 
+ConnectedPixels: connected.o $(OBJ)
+	$(CC) $(CFLAGS) -o ConnectedPixels connected.o $(OBJ) -lm
+	mv ConnectedPixels $(BIN)

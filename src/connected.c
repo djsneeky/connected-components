@@ -5,16 +5,16 @@
 #include "tiff.h"
 #include "typeutil.h"
 
+typedef struct pixel {
+  int row, col;
+} pixel_t;
+
 void print_usage(const char *program_name);
-void ConnectedNeighbors(struct pixel s, double T, unsigned char **img,
-                        int width, int height, int *M, struct pixel c[4]);
-void ConnectedSet(struct pixel s, double T, unsigned char **img, int width,
+void ConnectedNeighbors(pixel_t s, double T, unsigned char **img, int width,
+                        int height, int *M, pixel_t c[4]);
+void ConnectedSet(pixel_t s, double T, unsigned char **img, int width,
                   int height, int ClassLabel, unsigned int **seg,
                   int *NumConPixels);
-
-struct pixel {
-  int row, col;
-};
 
 /**
  * @brief Finds the connected neighbors of a pixel
@@ -33,8 +33,8 @@ struct pixel {
  * 2. if neighbor is within threshold, add it to list of connected neighbors and
  * increment number of neighbors
  */
-void ConnectedNeighbors(struct pixel s, double T, unsigned char **img,
-                        int width, int height, int *M, struct pixel c[4]) {
+void ConnectedNeighbors(pixel_t s, double T, unsigned char **img, int width,
+                        int height, int *M, pixel_t c[4]) {
   // Define directions for neighbors: up, down, left, right
   int dx[] = {0, 0, -1, 1};
   int dy[] = {-1, 1, 0, 0};
@@ -71,20 +71,20 @@ void ConnectedNeighbors(struct pixel s, double T, unsigned char **img,
  * @param seg
  * @param NumConPixels
  */
-void ConnectedSet(struct pixel s, double T, unsigned char **img, int width,
+void ConnectedSet(pixel_t s, double T, unsigned char **img, int width,
                   int height, int ClassLabel, unsigned int **seg,
                   int *NumConPixels) {
   // add seed pixel to queue
-  struct pixel B[width * height];
+  pixel_t B[width * height];
   int B_idx = 0;
   B[B_idx] = s;
   do {
     // pop a pixel, set it in the output image, and increment connected count
-    struct pixel s = B[B_idx--];
+    pixel_t s = B[B_idx--];
     seg[s.row][s.col] = ClassLabel;
     *NumConPixels += 1;
     // get connected neighbors for the popped pixel
-    struct pixel neighbors[4];
+    pixel_t neighbors[4];
     int num_neighbors = 0;
     ConnectedNeighbors(s, T, img, width, height, &num_neighbors, neighbors);
     // add neighbors to the queue if not already a part of seg
@@ -98,11 +98,9 @@ void ConnectedSet(struct pixel s, double T, unsigned char **img, int width,
 
 int main(int argc, char **argv) {
   FILE *fp;
-  struct TIFF_img input_img;
-  double **img1;
-  int32_t i, j, pixel;
+  struct TIFF_img input_img, seg_img;
 
-  if (argc != 1) {
+  if (argc != 2) {
     print_usage(argv[0]);
     return EXIT_FAILURE;
   }
@@ -123,10 +121,33 @@ int main(int argc, char **argv) {
   fclose(fp);
 
   // check image data type
-  if (input_img.TIFF_type != 'm') {
+  if (input_img.TIFF_type != 'g') {
     fprintf(stderr, "Error: image must be 8-bit grayscale\n");
     return EXIT_FAILURE;
   }
+
+  // create output seg image
+  get_TIFF(&seg_img, input_img.height, input_img.width, 'g');
+
+  pixel_t s = {.col = 67, .row = 45};
+  int connected_pixels = 0;
+  ConnectedSet(s, 2, input_img.mono, input_img.width, input_img.height, 1,
+               seg_img.mono, &connected_pixels);
+
+  // open seg image file
+  if ((fp = fopen("../img/seg.tif", "wb")) == NULL) {
+    fprintf(stderr, "cannot open file seg.tif\n");
+    return EXIT_FAILURE;
+  }
+
+  // write seg image
+  if (write_TIFF(fp, &seg_img)) {
+    fprintf(stderr, "error writing TIFF file %s\n", argv[2]);
+    return EXIT_FAILURE;
+  }
+
+  // close seg image file
+  fclose(fp);
 
   return EXIT_SUCCESS;
 }
