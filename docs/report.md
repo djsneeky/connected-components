@@ -1,25 +1,24 @@
-#include <math.h>
+## Area Fill
 
-#include "allocate.h"
-#include "randlib.h"
-#include "tiff.h"
-#include "typeutil.h"
+### Input Image
 
-typedef struct pixel {
-  int row, col;
-} pixel_t;
+![Alt text](../img/img22gd2.png)
 
-void print_usage(const char *program_name);
-void ConnectedNeighbors(pixel_t s, double T, unsigned char **img, int width,
-                        int height, int *M, pixel_t c[4]);
-void ConnectedSet(pixel_t s, double T, unsigned char **img, int width,
-                  int height, int ClassLabel, unsigned int **seg,
-                  int *NumConPixels);
-int AreaFill(unsigned char **img, int width, int height, double threshold,
-             pixel_t s);
-int GetAllConnectedSets(unsigned char **input_img, int width, int height,
-                        double threshold, int min_connected_pixels);
+### Input Image Connected Set for T = 2
 
+![Alt text](../img/fill_2.00.png)
+
+### Input Image Connected Set for T = 1
+
+![Alt text](../img/fill_1.00.png)
+
+### Input Image Connected Set for T = 3
+
+![Alt text](../img/fill_3.00.png)
+
+### C code
+
+```C
 /**
  * @brief Finds the connected neighbors of a pixel
  *
@@ -178,6 +177,85 @@ int AreaFill(unsigned char **img, int width, int height, double threshold,
   return EXIT_SUCCESS;
 }
 
+int main(int argc, char **argv) {
+  FILE *fp;
+  struct TIFF_img input_img;
+
+  if (argc != 3) {
+    print_usage(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  double threshold = atof(argv[2]);
+
+  // open image file
+  if ((fp = fopen(argv[1], "rb")) == NULL) {
+    fprintf(stderr, "Error: failed to open file %s\n", argv[1]);
+    return EXIT_FAILURE;
+  }
+
+  // read image
+  if (read_TIFF(fp, &input_img)) {
+    fprintf(stderr, "Error: failed to read file %s\n", argv[1]);
+    return EXIT_FAILURE;
+  }
+
+  // close image file
+  fclose(fp);
+
+  // check image data type
+  if (input_img.TIFF_type != 'g') {
+    fprintf(stderr, "Error: image must be 8-bit grayscale\n");
+    return EXIT_FAILURE;
+  }
+
+  int ret;
+  pixel_t s = {.col = 67, .row = 45};
+  ret =
+      AreaFill(input_img.mono, input_img.width, input_img.height, threshold, s);
+  if (ret == EXIT_FAILURE) {
+    return ret;
+  }
+  printf("finished AreaFill\n");
+
+  ret = GetAllConnectedSets(input_img.mono, input_img.width, input_img.height,
+                            threshold, 100);
+  if (ret == EXIT_FAILURE) {
+    return ret;
+  }
+  printf("finished GetAllConnectedSets\n");
+
+  free_TIFF(&(input_img));
+
+  printf("done\n");
+
+  return EXIT_SUCCESS;
+}
+```
+
+## Image Segmentation
+
+### Image Segmentation for T = 1
+
+44 distinct pixel regions
+
+![Alt text](../img/scrambled_segmentation_1.00.png)
+
+### Image Segmentation for T = 2
+
+50 distinct pixel regions
+
+![Alt text](../img/scrambled_segmentation_2.00.png)
+
+### Image Segmentation for T = 3
+
+24 distinct pixel regions
+
+![Alt text](../img/scrambled_segmentation_3.00.png)
+
+### C code
+
+```C
 /**
  * @brief Get all the connected sets
  *
@@ -358,3 +436,5 @@ void print_usage(const char *program_name) {
       "  <threshold> : Specify the threshold number for determining pixel "
       "neighbors.\n");
 }
+
+```
